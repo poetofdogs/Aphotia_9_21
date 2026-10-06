@@ -110,6 +110,50 @@ public:
 
 
 	// =========================================================
+	// ATTACK SETTINGS
+	// =========================================================
+
+	// Distance at which the predator is allowed to attack.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Predator|Attack")
+	float AttackDistance = 450.0f;
+
+	// Chance that the predator attacks when its Stage 3 timer expires.
+	// 0.0 = never, 1.0 = always.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Predator|Attack")
+	float AttackChance = 0.65f;
+
+	// Oxygen removed from the player by one attack.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Predator|Attack")
+	float AttackDamage = 50.0f;
+
+	// Minimum time between attacks.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Predator|Attack")
+	float AttackCooldown = 8.0f;
+
+	// How long the predator spends swimming away after attacking.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Predator|Attack")
+	float RetreatDuration = 3.0f;
+
+	// How strongly the predator moves away from the player.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Predator|Attack")
+	float RetreatSpeed = 900.0f;
+
+	// Additional sideways movement while retreating.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Predator|Attack")
+	float RetreatOrbitSpeed = 250.0f;
+
+
+	// =========================================================
+	// BLUEPRINT ATTACK EVENT
+	// =========================================================
+
+	// BP_Predator can implement this event to apply damage,
+	// play sounds, animation, FX, etc.
+	UFUNCTION(BlueprintImplementableEvent, Category = "Predator|Attack")
+	void OnPredatorAttack(float Damage);
+
+
+	// =========================================================
 	// FUNCTIONS
 	// =========================================================
 
@@ -126,16 +170,45 @@ public:
 	EPredatorStage GetCurrentStage() const;
 
 
+	// Returns whether the predator is currently retreating.
+	UFUNCTION(BlueprintPure, Category = "Predator|Attack")
+	bool IsRetreating() const;
+
+
 private:
+
+	// =========================================================
+	// INTERNAL VARIABLES
+	// =========================================================
 
 	float BehaviorTimer = 0.0f;
 
 	float NavigationTimer = 0.0f;
 
+	float AttackCooldownTimer = 0.0f;
+
+	float RetreatTimer = 0.0f;
+
 	FVector NavigationTargetLocation = FVector::ZeroVector;
 
+	FVector RetreatDirection = FVector::ZeroVector;
+
+	bool bIsRetreating = false;
+
+
+	// =========================================================
+	// INTERNAL FUNCTIONS
+	// =========================================================
 
 	void UpdateBehaviorTimer(float DeltaTime);
+
+	void UpdateAttackCooldown(float DeltaTime);
+
+	void UpdateRetreat(float DeltaTime);
+
+	void TryAttack();
+
+	void StartRetreat();
 
 	void UpdateOrbitMovement(float DeltaTime);
 
