@@ -30,9 +30,7 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 
-	// =========================================================
-	// STAGE SETTINGS
-	// =========================================================
+	//stage settings
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Predator|Stages")
 	float Stage1Radius = 1500.0f;
@@ -50,17 +48,11 @@ public:
 	EPredatorStage TargetStage = EPredatorStage::Stage2;
 
 
-	// =========================================================
-	// TARGET
-	// =========================================================
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Predator|Target")
 	AActor* TargetActor = nullptr;
 
-
-	// =========================================================
-	// MOVEMENT
-	// =========================================================
+ // predd move
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Predator|Movement")
 	float OrbitSpeed = 150.0f;
@@ -71,10 +63,17 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Predator|Movement")
 	float MovementSpeed = 600.0f;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Predator|Movement")
+	float VerticalOrbitStrength = 0.65f;
 
-	// =========================================================
-	// NAVIGATION
-	// =========================================================
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Predator|Movement")
+	float VerticalOrbitSpeed = 0.8f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Predator|Movement")
+	float Stage1ResetSpeed = 3000.0f;
+
+
+	//navv
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Predator|Navigation")
 	float NavigationUpdateInterval = 1.0f;
@@ -86,76 +85,69 @@ public:
 	float NavigationSampleRadius = 300.0f;
 
 
-	// =========================================================
-	// BEHAVIOR TIMER
-	// =========================================================
+	//timers
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Predator|Behavior")
-	float Stage1MinBehaviorTime = 10.0f;
+	float Stage1MinBehaviorTime = 5.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Predator|Behavior")
-	float Stage1MaxBehaviorTime = 20.0f;
+	float Stage1MaxBehaviorTime = 8.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Predator|Behavior")
-	float Stage2MinBehaviorTime = 10.0f;
+	float Stage2MinBehaviorTime = 5.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Predator|Behavior")
-	float Stage2MaxBehaviorTime = 20.0f;
+	float Stage2MaxBehaviorTime = 8.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Predator|Behavior")
-	float Stage3MinBehaviorTime = 5.0f;
+	float Stage3MinBehaviorTime = 3.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Predator|Behavior")
-	float Stage3MaxBehaviorTime = 10.0f;
+	float Stage3MaxBehaviorTime = 5.0f;
 
+ //attack part begins
 
-	// =========================================================
-	// ATTACK SETTINGS
-	// =========================================================
-
-	// Distance at which the predator is allowed to attack.
+	// Distance at which the predator begins its attack rush.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Predator|Attack")
-	float AttackDistance = 450.0f;
+	float AttackTriggerDistance = 600.0f;
 
-	// Chance that the predator attacks when its Stage 3 timer expires.
-	// 0.0 = never, 1.0 = always.
+	// Distance from player at which the attack actually hits.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Predator|Attack")
+	float AttackHitDistance = 100.0f;
+
+	// Speed of the predator while rushing toward the player.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Predator|Attack")
+	float AttackRushSpeed = 1800.0f;
+
+	// Maximum amount of time the attack rush can last.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Predator|Attack")
+	float AttackRushDuration = 1.0f;
+
+	// Probability of starting an attack when the attack condition is met.
+	// 1.0 = 100%.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Predator|Attack")
 	float AttackChance = 0.65f;
 
-	// Oxygen removed from the player by one attack.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Predator|Attack")
 	float AttackDamage = 50.0f;
 
-	// Minimum time between attacks.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Predator|Attack")
 	float AttackCooldown = 8.0f;
 
-	// How long the predator spends swimming away after attacking.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Predator|Attack")
 	float RetreatDuration = 3.0f;
 
-	// How strongly the predator moves away from the player.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Predator|Attack")
 	float RetreatSpeed = 900.0f;
 
-	// Additional sideways movement while retreating.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Predator|Attack")
 	float RetreatOrbitSpeed = 250.0f;
 
 
-	// =========================================================
-	// BLUEPRINT ATTACK EVENT
-	// =========================================================
-
-	// BP_Predator can implement this event to apply damage,
-	// play sounds, animation, FX, etc.
 	UFUNCTION(BlueprintImplementableEvent, Category = "Predator|Attack")
 	void OnPredatorAttack(float Damage);
 
 
-	// =========================================================
-	// FUNCTIONS
-	// =========================================================
 
 	UFUNCTION(BlueprintCallable, Category = "Predator")
 	void UpdatePredatorStage();
@@ -169,17 +161,16 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Predator")
 	EPredatorStage GetCurrentStage() const;
 
-
-	// Returns whether the predator is currently retreating.
 	UFUNCTION(BlueprintPure, Category = "Predator|Attack")
 	bool IsRetreating() const;
+
+	UFUNCTION(BlueprintCallable, Category = "Predator|Flashlight")
+	void ResetToStage1();
 
 
 private:
 
-	// =========================================================
-	// INTERNAL VARIABLES
-	// =========================================================
+ // internal states
 
 	float BehaviorTimer = 0.0f;
 
@@ -189,16 +180,26 @@ private:
 
 	float RetreatTimer = 0.0f;
 
+	float AttackRushTimer = 0.0f;
+
+	float VerticalOrbitPhase = 0.0f;
+
 	FVector NavigationTargetLocation = FVector::ZeroVector;
 
 	FVector RetreatDirection = FVector::ZeroVector;
 
+	FVector AttackDirection = FVector::ZeroVector;
+
 	bool bIsRetreating = false;
 
+	bool bReturningToStage1 = false;
 
-	// =========================================================
-	// INTERNAL FUNCTIONS
-	// =========================================================
+	bool bIsAttacking = false;
+
+	bool bHasDealtAttackDamage = false;
+
+
+ // internal methods
 
 	void UpdateBehaviorTimer(float DeltaTime);
 
@@ -206,11 +207,17 @@ private:
 
 	void UpdateRetreat(float DeltaTime);
 
-	void TryAttack();
+	void UpdateStage1ResetMovement(float DeltaTime);
 
-	void StartRetreat();
+	void UpdateAttackMovement(float DeltaTime);
 
 	void UpdateOrbitMovement(float DeltaTime);
+
+	void TryStartAttack();
+
+	void FinishAttack();
+
+	void StartRetreat();
 
 	bool FindNavigationTarget(FVector& OutLocation);
 
