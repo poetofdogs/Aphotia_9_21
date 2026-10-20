@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Sound/SoundBase.h"
 #include "PredatorCharacter.generated.h"
 
 UENUM(BlueprintType)
@@ -46,8 +47,6 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Predator|Stages")
 	EPredatorStage TargetStage = EPredatorStage::Stage2;
-
-
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Predator|Target")
 	AActor* TargetActor = nullptr;
@@ -142,6 +141,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Predator|Attack")
 	float RetreatOrbitSpeed = 250.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Predator|Attack")
+	USoundBase* stageTransitionSFX;
 
 
 	UFUNCTION(BlueprintImplementableEvent, Category = "Predator|Attack")
