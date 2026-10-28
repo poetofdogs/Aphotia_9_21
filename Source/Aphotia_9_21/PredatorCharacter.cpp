@@ -1,6 +1,6 @@
 #include "PredatorCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
-
+#include "Kismet/GameplayStatics.h"
 
 APredatorCharacter::APredatorCharacter()
 {
@@ -69,7 +69,6 @@ void APredatorCharacter::Tick(float DeltaTime)
 	{
 		return;
 	}
-
 
 	if (bReturningToStage1)
 	{
@@ -233,6 +232,10 @@ void APredatorCharacter::UpdateBehaviorTimer(float DeltaTime)
 	if (BehaviorTimer > 0.0f)
 	{
 		return;
+	}
+	else
+	{
+		UGameplayStatics::PlaySoundAtLocation(GetWorld(), stageTransitionSFX, GetActorLocation());
 	}
 
 
