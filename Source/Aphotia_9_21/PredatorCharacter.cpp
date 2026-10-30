@@ -69,6 +69,15 @@ void APredatorCharacter::Tick(float DeltaTime)
 	{
 		return;
 	}
+	else {
+		FVector PlayerLocation = TargetActor->GetActorLocation();
+
+		FVector PredatorLocation = GetActorLocation();
+
+		PredatorLocation.Z = PlayerLocation.Z;
+
+		SetActorLocation(PredatorLocation);
+	}
 
 	if (bReturningToStage1)
 	{
