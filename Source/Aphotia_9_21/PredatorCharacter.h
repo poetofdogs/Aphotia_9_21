@@ -200,6 +200,10 @@ private:
 
 	bool bHasDealtAttackDamage = false;
 
+	int32 facingRight = 1;
+
+	int32 predCameraPos = 1;
+
 
  // internal methods
 
@@ -226,4 +230,8 @@ private:
 	float GetDesiredOrbitRadius() const;
 
 	float GetTargetOrbitRadius() const;
+
+	void NewPredatorMovement(float DeltaTime);
+
+	void RandomizePredatorPosition();
 };

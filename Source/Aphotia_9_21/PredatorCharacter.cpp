@@ -1,6 +1,7 @@
 #include "PredatorCharacter.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetMathLibrary.h"
 
 APredatorCharacter::APredatorCharacter()
 {
@@ -29,6 +30,8 @@ void APredatorCharacter::BeginPlay()
 		Stage1MinBehaviorTime,
 		Stage1MaxBehaviorTime
 	);
+
+	RandomizePredatorPosition();
 
 	NavigationTimer = 0.0f;
 
@@ -124,7 +127,7 @@ void APredatorCharacter::Tick(float DeltaTime)
 
 
 
-	UpdatePredatorStage();
+	//UpdatePredatorStage();
 
 
 
@@ -144,7 +147,7 @@ void APredatorCharacter::Tick(float DeltaTime)
 	{
 		const float Distance = GetDistanceToTarget();
 
-		if (Distance <= AttackTriggerDistance &&
+		if ( //Distance <= AttackTriggerDistance &&
 			AttackCooldownTimer <= 0.0f)
 		{
 			const float Decision = FMath::FRand();
@@ -158,11 +161,33 @@ void APredatorCharacter::Tick(float DeltaTime)
 		}
 	}
 
+	if (!bIsRetreating && (CurrentStage == EPredatorStage::Stage1 || CurrentStage == EPredatorStage::Stage2))
+	{
+		FVector Radial = GetActorLocation() - TargetActor->GetActorLocation();
+		Radial.Z = 0.0f;
+		Radial = Radial.GetSafeNormal();
+		if (facingRight == 0) {
+			facingRight = -1;
+		}
+		const FVector Tangent = FVector::CrossProduct(FVector::UpVector, Radial) * facingRight;
+		FRotator CurrentRot = GetActorRotation();
 
+		//FRotator NewRot = FMath::RInterpTo(CurrentRot, FRotationMatrix::MakeFromX(Tangent).Rotator(), DeltaTime, 0.5f);
 
-	UpdateBehaviorTimer(DeltaTime);
+		SetActorRotation(FRotationMatrix::MakeFromX(Tangent).Rotator());
+		
+	}
+	if (CurrentStage == EPredatorStage::Stage3) {
+		SetActorRotation(UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), TargetActor->GetActorLocation()));
+	}
+	if (!bIsAttacking && !bIsRetreating) {
+		UpdateBehaviorTimer(DeltaTime);
+	}
 
-	UpdateOrbitMovement(DeltaTime);
+	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow, FString::Printf(TEXT("Stage: %i"), static_cast<int32>(CurrentStage)));
+	
+
+	//UpdateOrbitMovement(DeltaTime);
 }
 
 
@@ -254,7 +279,15 @@ void APredatorCharacter::UpdateBehaviorTimer(float DeltaTime)
 	// 1st stage
 	case EPredatorStage::Stage1:
 	{
-		TargetStage = EPredatorStage::Stage2;
+		if (FMath::FRandRange(0.0f, 1.0f) > 0.5f) {
+			TargetStage = EPredatorStage::Stage2;
+			CurrentStage = EPredatorStage::Stage2;
+			RandomizePredatorPosition();
+		}
+		else {
+			RandomizePredatorPosition();
+		}
+		
 
 		BehaviorTimer = FMath::FRandRange(
 			Stage1MinBehaviorTime,
@@ -270,8 +303,14 @@ void APredatorCharacter::UpdateBehaviorTimer(float DeltaTime)
 	{
 		// Stage 2 ONLY progresses toward Stage 3.
 
-		TargetStage = EPredatorStage::Stage3;
-
+		if (FMath::FRandRange(0.0f, 1.0f) > 0.5f) {
+			TargetStage = EPredatorStage::Stage3;
+			CurrentStage = EPredatorStage::Stage3;
+			RandomizePredatorPosition();
+		}
+		else {
+			RandomizePredatorPosition();
+		}
 		BehaviorTimer = FMath::FRandRange(
 			Stage2MinBehaviorTime,
 			Stage2MaxBehaviorTime
@@ -286,9 +325,14 @@ void APredatorCharacter::UpdateBehaviorTimer(float DeltaTime)
 	case EPredatorStage::Stage3:
 	{
 		// If no attack happens, return to Stage 2.
-
-		TargetStage = EPredatorStage::Stage2;
-
+		if (FMath::FRandRange(0.0f, 1.0f) > 0.5f) {
+			TargetStage = EPredatorStage::Stage2;
+			CurrentStage = EPredatorStage::Stage2;
+			RandomizePredatorPosition();
+		}
+		else {
+			RandomizePredatorPosition();
+		}
 		BehaviorTimer = FMath::FRandRange(
 			Stage3MinBehaviorTime,
 			Stage3MaxBehaviorTime
@@ -341,7 +385,7 @@ void APredatorCharacter::TryStartAttack()
 
 	if (Distance > AttackTriggerDistance)
 	{
-		return;
+		//return;
 	}
 
 
@@ -404,7 +448,11 @@ void APredatorCharacter::UpdateAttackMovement(float DeltaTime)
 		AttackDirection.Normalize();
 	}
 
-
+	FRotator lookAtPlayer = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), TargetActor->GetActorLocation());
+	FRotator CurrentRot = GetActorRotation();
+	FRotator NewRot = FMath::RInterpTo(CurrentRot, lookAtPlayer, DeltaTime, 0.01f);
+	SetActorRotation(NewRot);
+	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("UpdateAttackMovement"));
 	// Make sure the attack speed stays active.
 	GetCharacterMovement()->MaxFlySpeed =
 		AttackRushSpeed;
@@ -529,71 +577,69 @@ void APredatorCharacter::UpdateRetreat(float DeltaTime)
 	RetreatTimer -= DeltaTime;
 
 
-	FVector AwayFromPlayer =
-		GetActorLocation() -
-		TargetActor->GetActorLocation();
+	FVector AwayFromPlayer = GetActorLocation() - TargetActor->GetActorLocation();
 
 
 	if (!AwayFromPlayer.IsNearlyZero())
 	{
 		AwayFromPlayer.Normalize();
 
-		RetreatDirection =
-			AwayFromPlayer;
+		RetreatDirection = AwayFromPlayer;
 	}
 
 
 	// curved retreat
-	FVector SideDirection =
-		FVector::CrossProduct(
-			FVector::UpVector,
-			RetreatDirection
-		);
+	//FVector SideDirection =
+		//FVector::CrossProduct(
+		//	FVector::UpVector,
+		//	RetreatDirection
+		//);
 
 
-	if (SideDirection.IsNearlyZero())
-	{
-		SideDirection =
-			FVector::RightVector;
-	}
-	else
-	{
-		SideDirection.Normalize();
-	}
+	//if (SideDirection.IsNearlyZero())
+	//{
+	//	SideDirection =
+	//		FVector::RightVector;
+	//}
+	//else
+	//{
+	//	SideDirection.Normalize();
+	//}
+	UCharacterMovementComponent* MoveComp = GetCharacterMovement();
+	
+
+	MoveComp->MaxFlySpeed = RetreatSpeed;
+	MoveComp->MaxAcceleration = 10000;
+
+	AddMovementInput(RetreatDirection, 1.0f);
+	//FVector RetreatMovement =
+		//(RetreatDirection * RetreatSpeed);
+		//+
+		//(SideDirection * RetreatOrbitSpeed);
 
 
-	FVector RetreatMovement =
-		(RetreatDirection * RetreatSpeed)
-		+
-		(SideDirection * RetreatOrbitSpeed);
+	//if (!RetreatMovement.IsNearlyZero())
+	//{
+	//	RetreatMovement.Normalize();
 
+	//	AddMovementInput(
+	//		RetreatMovement,
+	//		8.0f
+	//	);
+	//}
+	FRotator lookAtPlayer = UKismetMathLibrary::FindLookAtRotation(TargetActor->GetActorLocation(), GetActorLocation());
+	FRotator CurrentRot = GetActorRotation();
+	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Retreating"));
+	//FRotator NewRot = FMath::RInterpTo(CurrentRot, lookAtPlayer, DeltaTime, 0.5f);
 
-	if (!RetreatMovement.IsNearlyZero())
-	{
-		RetreatMovement.Normalize();
-
-		AddMovementInput(
-			RetreatMovement,
-			1.0f
-		);
-	}
-
+	SetActorRotation(lookAtPlayer);
 
 	if (RetreatTimer <= 0.0f)
 	{
 		bIsRetreating = false;
-
-		CurrentStage =
-			EPredatorStage::Stage1;
-
-		TargetStage =
-			EPredatorStage::Stage1;
-
-		BehaviorTimer =
-			FMath::FRandRange(
-				Stage1MinBehaviorTime,
-				Stage1MaxBehaviorTime
-			);
+		CurrentStage = EPredatorStage::Stage1;
+		TargetStage = EPredatorStage::Stage1;
+		BehaviorTimer = FMath::FRandRange(Stage1MinBehaviorTime, Stage1MaxBehaviorTime);
 	}
 }
 
@@ -666,7 +712,8 @@ void APredatorCharacter::UpdateStage1ResetMovement(float DeltaTime)
 
 	GetCharacterMovement()->MaxFlySpeed =
 		Stage1ResetSpeed;
-
+	float flySpeed = GetCharacterMovement()->MaxFlySpeed;
+	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("Value: %f"), flySpeed));
 
 	// Full 3D direction away from player.
 	FVector AwayFromPlayer =
@@ -674,16 +721,19 @@ void APredatorCharacter::UpdateStage1ResetMovement(float DeltaTime)
 		TargetActor->GetActorLocation();
 
 
-	if (AwayFromPlayer.IsNearlyZero())
-	{
-		AwayFromPlayer =
-			FVector(1.0f, 0.0f, 0.0f);
-	}
+	//if (AwayFromPlayer.IsNearlyZero())
+	//{
+	//	AwayFromPlayer =
+	//		FVector(1.0f, 0.0f, 0.0f);
+	//}
 
 
 	AwayFromPlayer.Normalize();
-
-
+	FRotator lookAtPlayer = UKismetMathLibrary::FindLookAtRotation(TargetActor->GetActorLocation(), GetActorLocation());
+	FRotator CurrentRot = GetActorRotation();
+	//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("UpdateStage1Movement"));
+	FRotator NewRot = FMath::RInterpTo(CurrentRot, lookAtPlayer, DeltaTime, 0.5f);
+	SetActorRotation(NewRot);
 	// Rush away from player.
 	AddMovementInput(
 		AwayFromPlayer,
@@ -902,5 +952,49 @@ void APredatorCharacter::UpdateOrbitMovement(
 			MovementDirection,
 			1.0f
 		);
+	}
+}
+
+void APredatorCharacter::NewPredatorMovement(float DeltaTime)
+{
+	switch (predCameraPos)
+	{
+	case 1:
+		break;
+	case 2:
+		break;
+	case 3:
+		break;
+	case 4:
+		break;
+	
+	}
+}
+
+void APredatorCharacter::RandomizePredatorPosition()
+{
+	predCameraPos = FMath::RandRange(1, 4);
+
+	FVector playerLoc = TargetActor->GetActorLocation();
+
+	switch (predCameraPos)
+	{
+	case 1:
+		facingRight = FMath::RandRange(0, 1);
+		SetActorLocation(FVector(playerLoc.X + GetDesiredOrbitRadius(), playerLoc.Y, playerLoc.Z));
+		break;
+	case 2:
+		facingRight = FMath::RandRange(0, 1);
+		SetActorLocation(FVector(playerLoc.X, playerLoc.Y + GetDesiredOrbitRadius(), playerLoc.Z));
+		break;
+	case 3:
+		facingRight = FMath::RandRange(0, 1);
+		SetActorLocation(FVector(playerLoc.X - GetDesiredOrbitRadius(), playerLoc.Y, playerLoc.Z));
+		break;
+	case 4:
+		facingRight = FMath::RandRange(0, 1);
+		SetActorLocation(FVector(playerLoc.X, playerLoc.Y - GetDesiredOrbitRadius(), playerLoc.Z));
+		break;
+
 	}
 }
