@@ -146,7 +146,9 @@ void APredatorCharacter::Tick(float DeltaTime)
 	if (CurrentStage == EPredatorStage::Stage3)
 	{
 		const float Distance = GetDistanceToTarget();
-
+		SetActorRotation(UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), TargetActor->GetActorLocation()));
+		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("lookAtPlayer"));
+		
 		if ( //Distance <= AttackTriggerDistance &&
 			AttackCooldownTimer <= 0.0f)
 		{
@@ -178,13 +180,13 @@ void APredatorCharacter::Tick(float DeltaTime)
 		
 	}
 	if (CurrentStage == EPredatorStage::Stage3) {
-		SetActorRotation(UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), TargetActor->GetActorLocation()));
+		
 	}
 	if (!bIsAttacking && !bIsRetreating) {
 		UpdateBehaviorTimer(DeltaTime);
 	}
 
-	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow, FString::Printf(TEXT("Stage: %i"), static_cast<int32>(CurrentStage)));
+	//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Yellow, FString::Printf(TEXT("Stage: %i"), static_cast<int32>(CurrentStage)));
 	
 
 	//UpdateOrbitMovement(DeltaTime);
@@ -452,7 +454,7 @@ void APredatorCharacter::UpdateAttackMovement(float DeltaTime)
 	FRotator CurrentRot = GetActorRotation();
 	FRotator NewRot = FMath::RInterpTo(CurrentRot, lookAtPlayer, DeltaTime, 0.01f);
 	SetActorRotation(NewRot);
-	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("UpdateAttackMovement"));
+	//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("UpdateAttackMovement"));
 	// Make sure the attack speed stays active.
 	GetCharacterMovement()->MaxFlySpeed =
 		AttackRushSpeed;
@@ -629,7 +631,7 @@ void APredatorCharacter::UpdateRetreat(float DeltaTime)
 	//}
 	FRotator lookAtPlayer = UKismetMathLibrary::FindLookAtRotation(TargetActor->GetActorLocation(), GetActorLocation());
 	FRotator CurrentRot = GetActorRotation();
-	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Retreating"));
+	//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, TEXT("Retreating"));
 	//FRotator NewRot = FMath::RInterpTo(CurrentRot, lookAtPlayer, DeltaTime, 0.5f);
 
 	SetActorRotation(lookAtPlayer);
@@ -713,7 +715,7 @@ void APredatorCharacter::UpdateStage1ResetMovement(float DeltaTime)
 	GetCharacterMovement()->MaxFlySpeed =
 		Stage1ResetSpeed;
 	float flySpeed = GetCharacterMovement()->MaxFlySpeed;
-	GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("Value: %f"), flySpeed));
+	//GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Green, FString::Printf(TEXT("Value: %f"), flySpeed));
 
 	// Full 3D direction away from player.
 	FVector AwayFromPlayer =
