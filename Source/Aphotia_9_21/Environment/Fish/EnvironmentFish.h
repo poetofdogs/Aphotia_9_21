@@ -7,7 +7,7 @@
 class USphereComponent;
 class UStaticMeshComponent;
 
-/** Ambient fish. All gameplay runs in the project runtime module, without editor plugins. */
+/** Ambient fish that roam, avoid obstacles, and flee from strong flashes. */
 UCLASS(Blueprintable)
 class APHOTIA_9_21_API AEnvironmentFish : public AActor
 {
@@ -56,11 +56,6 @@ public:
     UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category="Fish|Status")
     FVector TargetLocation;
 
-    UFUNCTION(BlueprintCallable, Category="Fish")
-    void InitializeFish();
-    /** Also allows deterministic simulation/validation without starting the player's level. */
-    UFUNCTION(BlueprintCallable, Category="Fish")
-    void StepSimulation(float DeltaSeconds);
     UFUNCTION(CallInEditor, Category="Fish|1 Swimming")
     void ShowSwimBounds();
 private:
@@ -72,6 +67,8 @@ private:
     FVector Heading = FVector::ForwardVector;
     FVector ScatterBias;
     FRandomStream Random;
+    void InitializeFish();
+    void StepSimulation(float DeltaSeconds);
     FVector EffectiveExtent() const;
     FVector ClampToArea(const FVector& Point) const;
     bool IsInsideArea(const FVector& Point) const;
